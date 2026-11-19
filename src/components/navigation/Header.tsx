@@ -68,9 +68,8 @@ export function Header({
                   Himalayas
                 </span>
               </span>
-              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono -mt-0.5 hidden sm:flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
-                Live Subcontinent OS
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono -mt-0.5 hidden sm:block">
+                India · Nepal · Bhutan OS
               </p>
             </div>
           </Link>
@@ -86,7 +85,7 @@ export function Header({
                 key={link.href}
                 href={link.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   isActive
                     ? "bg-white text-slate-950 shadow-md dark:bg-slate-900 dark:text-cyan-400 font-black shadow-slate-300/40 dark:shadow-black/50"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200"

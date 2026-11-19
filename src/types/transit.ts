@@ -1,4 +1,4 @@
-export type TransitMode = "train" | "bus" | "bike" | "car";
+export type TransitMode = "train" | "bus" | "car" | "bike" | "flight";
 
 export interface OriginCity {
   id: string;
@@ -57,6 +57,19 @@ export interface BikeOption {
   mountainPassNotes: string;
 }
 
+export interface FlightOption {
+  fromAirportCode: string;
+  toAirportCode: string;
+  gatewayAirportName: string;
+  carriers: string;
+  flightDurationHours: number;
+  transferDriveHours: number;
+  oneWayFareInr: number;
+  airportCabToHotelInr: number;
+  isDirect: boolean;
+  proTip: string;
+}
+
 export interface MultiModalTransitPlan {
   id: string;
   originId: string;
@@ -68,12 +81,17 @@ export interface MultiModalTransitPlan {
   bus: BusOption;
   car: CarOption;
   bike: BikeOption;
+  flight?: FlightOption;
   crossBorderPermit?: {
     country: "NP" | "BT";
     vehicleCustomsFeeInr: number;
     permitName: string;
     requirementNotes: string;
   };
+}
+
+export interface ResolvedTransitPlan extends MultiModalTransitPlan {
+  flight: FlightOption;
 }
 
 export interface ReverseBudgetMatch {

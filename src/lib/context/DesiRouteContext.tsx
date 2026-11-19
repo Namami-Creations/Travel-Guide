@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { CurrencyCode, DietaryType } from "@/types/route";
+import { GroupExpenseItem } from "@/lib/engine/trip-utils";
 
 export interface TravelerProfile {
   travelerName: string;
@@ -27,6 +28,7 @@ interface StoredPayload {
   settings: AppSettings;
   savedRouteIds: string[];
   rsvpedRouteIds: string[];
+  expensesByRoute: Record<string, GroupExpenseItem[]>;
 }
 
 const STORAGE_KEY = "desiroute:v1:state";
@@ -50,6 +52,7 @@ const SERVER_SNAPSHOT: StoredPayload = {
   settings: DEFAULT_SETTINGS,
   savedRouteIds: DEFAULT_SAVED_ROUTES,
   rsvpedRouteIds: [],
+  expensesByRoute: {},
 };
 
 let clientState: StoredPayload | null = null;
@@ -79,6 +82,10 @@ function readInitialClientState(): StoredPayload {
           ? parsed.savedRouteIds
           : DEFAULT_SAVED_ROUTES,
         rsvpedRouteIds: Array.isArray(parsed.rsvpedRouteIds) ? parsed.rsvpedRouteIds : [],
+        expensesByRoute:
+          parsed.expensesByRoute && typeof parsed.expensesByRoute === "object"
+            ? parsed.expensesByRoute
+            : {},
       };
       return clientState;
     }
@@ -142,11 +149,14 @@ interface DesiRouteContextValue {
   settings: AppSettings;
   savedRouteIds: string[];
   rsvpedRouteIds: string[];
+  expensesByRoute: Record<string, GroupExpenseItem[]>;
   storageUsageKb: number;
   updateProfile: (partial: Partial<TravelerProfile>) => void;
   updateSettings: (partial: Partial<AppSettings>) => void;
   toggleSavedRoute: (routeId: string) => void;
   toggleRsvpRoute: (routeId: string) => void;
+  addRouteExpense: (routeId: string, item: GroupExpenseItem) => void;
+  removeRouteExpense: (routeId: string, expenseId: string) => void;
   wipeAllMetadata: () => void;
 }
 
@@ -205,6 +215,30 @@ export function DesiRouteProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const addRouteExpense = useCallback((routeId: string, item: GroupExpenseItem) => {
+    const current = readInitialClientState();
+    const existing = current.expensesByRoute[routeId] ?? [];
+    persistClientState({
+      ...current,
+      expensesByRoute: {
+        ...current.expensesByRoute,
+        [routeId]: [...existing, item],
+      },
+    });
+  }, []);
+
+  const removeRouteExpense = useCallback((routeId: string, expenseId: string) => {
+    const current = readInitialClientState();
+    const existing = current.expensesByRoute[routeId] ?? [];
+    persistClientState({
+      ...current,
+      expensesByRoute: {
+        ...current.expensesByRoute,
+        [routeId]: existing.filter((e) => e.id !== expenseId),
+      },
+    });
+  }, []);
+
   const wipeAllMetadata = useCallback(() => {
     if (typeof window !== "undefined") {
       try {
@@ -219,6 +253,7 @@ export function DesiRouteProvider({ children }: { children: ReactNode }) {
       settings: { ...DEFAULT_SETTINGS, ghostMode: true },
       savedRouteIds: [],
       rsvpedRouteIds: [],
+      expensesByRoute: {},
     });
   }, []);
 
@@ -229,11 +264,14 @@ export function DesiRouteProvider({ children }: { children: ReactNode }) {
       settings: state.settings,
       savedRouteIds: state.savedRouteIds,
       rsvpedRouteIds: state.rsvpedRouteIds,
+      expensesByRoute: state.expensesByRoute,
       storageUsageKb,
       updateProfile,
       updateSettings,
       toggleSavedRoute,
       toggleRsvpRoute,
+      addRouteExpense,
+      removeRouteExpense,
       wipeAllMetadata,
     }),
     [
@@ -242,11 +280,14 @@ export function DesiRouteProvider({ children }: { children: ReactNode }) {
       state.settings,
       state.savedRouteIds,
       state.rsvpedRouteIds,
+      state.expensesByRoute,
       storageUsageKb,
       updateProfile,
       updateSettings,
       toggleSavedRoute,
       toggleRsvpRoute,
+      addRouteExpense,
+      removeRouteExpense,
       wipeAllMetadata,
     ]
   );

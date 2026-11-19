@@ -181,28 +181,88 @@ function NinePmClubModalContent({ isOpen, onClose, route }: NinePmClubModalProps
       </div>
 
       {/* Part 2: 8:30 PM Backpacker Dinner Pods */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-purple-500/10 dark:bg-purple-950/30 border border-purple-500/20">
-        <div className="flex items-center justify-between mb-1.5">
-          <h4 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-            <Utensils className="w-4 h-4 text-purple-600 dark:text-purple-400" aria-hidden="true" />
-            Tonight&apos;s 8:30 PM Solo Table in {route.destination}
-          </h4>
-          <span className="text-[10px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-500/30">
-            {rsvpSuccess ? "Seat Held" : "3 Spots Open"}
-          </span>
-        </div>
+      {(() => {
+        const venueByRoute: Record<
+          string,
+          { name: string; badge: string; address: string }
+        > = {
+          "bt-paro-thimphu": {
+            name: "Zombala Pure Veg & Momos Corner",
+            badge: "Pure Veg · Jain on Request",
+            address: "Norzin Lam Clock Tower Square, Thimphu (5 min walk from central hotels)",
+          },
+          "bt-punakha-valley": {
+            name: "Chimi Lhakhang Riverview Kitchen",
+            badge: "Pure Veg Thali",
+            address: "Sopsokha Village Trail, Punakha Valley (Warm wood-stove dining)",
+          },
+          "np-ktm-pokhara": {
+            name: "OR2K & Marwari Bhojanalaya Table",
+            badge: "Pure Veg & Jain Certified",
+            address: "Thamel Mandala Street / Pokhara Lakeside Hallan Chowk",
+          },
+          "np-chitwan-lumbini": {
+            name: "Rapti Sunset Satvik Kitchen",
+            badge: "Pure Veg & Jain",
+            address: "Sauraha Riverside Bazaar, 300m from Chitwan Park Entry Gate",
+          },
+          "in-goa-south": {
+            name: "Navtara Heritage Pure Veg Courtyard",
+            badge: "Pure Veg & Jain Thali",
+            address: "Near Palolem Main Road / Fontainhas Latin Quarter",
+          },
+          "in-himachal-tirthan": {
+            name: "Tirthan Riverstone Pure Veg Cafe",
+            badge: "Pure Veg · Local Siddu",
+            address: "Gushaini Footbridge Lane, Walking distance from riverside homestays",
+          },
+          "in-himachal-spiti": {
+            name: "Sol Cafe & Kaza Main Market Bhojanalaya",
+            badge: "Pure Veg · Hot Thukpa",
+            address: "Old Kaza Main Bazaar, 200m from Zostel Spiti",
+          },
+          "in-kashmir-gurez": {
+            name: "Dawar Valley Kashmiri Satvik Hearths",
+            badge: "Pure Veg Homestay Kitchen",
+            address: "Dawar Main Market overlooking Kishanganga River",
+          },
+          "in-sikkim-pelling": {
+            name: "Upper Pelling Kanchenjunga Veg Kitchen",
+            badge: "Pure Veg & Jain",
+            address: "Upper Pelling Helipad Road, opposite Pemayangtse trailhead",
+          },
+        };
+        const venue = venueByRoute[route.id] ?? {
+          name: `${route.destination} Community Veg Kitchen`,
+          badge: "Pure Veg & Jain",
+          address: `Central Bazaar Lane, ${route.region}`,
+        };
 
-        <p className="text-[11px] text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
-          Every evening at 8:30 PM, an opt-in table of 4–6 solo travelers convenes at a pre-vetted pure veg mountain cafe. Zero forced small talk.
-        </p>
+        return (
+          <div className="p-4 sm:p-5 rounded-2xl bg-purple-500/10 dark:bg-purple-950/30 border border-purple-500/20">
+            <div className="flex items-center justify-between mb-1.5">
+              <h4 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                <Utensils className="w-4 h-4 text-purple-600 dark:text-purple-400" aria-hidden="true" />
+                Tonight&apos;s 8:30 PM Solo Table in {route.destination}
+              </h4>
+              <span className="text-[10px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-500/30">
+                {rsvpSuccess ? "Seat Held" : "3 Spots Open"}
+              </span>
+            </div>
 
-        <div className="p-3 rounded-xl visionos-glass border border-slate-200/70 dark:border-slate-800 text-xs mb-3.5 space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="font-bold text-slate-900 dark:text-slate-100">The Himalayan Pine Kitchen</span>
-            <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">Pure Veg & Jain</span>
-          </div>
-          <p className="text-[11px] text-slate-500">Old Town Bazaar Lane, Walking distance from Zostel/Homestays</p>
-        </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
+              Every evening at 8:30 PM, an opt-in table of 4–6 solo travelers convenes at a pre-vetted pure veg local kitchen. Zero forced small talk.
+            </p>
+
+            <div className="p-3 rounded-xl visionos-glass border border-slate-200/70 dark:border-slate-800 text-xs mb-3.5 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-slate-900 dark:text-slate-100">{venue.name}</span>
+                <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
+                  {venue.badge}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">{venue.address}</p>
+            </div>
 
         <button
           type="button"
@@ -225,8 +285,10 @@ function NinePmClubModalContent({ isOpen, onClose, route }: NinePmClubModalProps
               <span>Reserve Seat at Tonight&apos;s 8:30 PM Table (Free)</span>
             </>
           )}
-        </button>
-      </div>
+            </button>
+          </div>
+        );
+      })()}
     </Modal>
   );
 }

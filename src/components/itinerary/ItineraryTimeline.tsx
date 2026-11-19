@@ -28,7 +28,7 @@ export function ItineraryTimeline({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+            <Compass className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
             <span className="text-[11px] uppercase tracking-wider font-mono text-emerald-600 dark:text-emerald-400 font-bold">
               Tested & Unhurried Field Schedule
             </span>

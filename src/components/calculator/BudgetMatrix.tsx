@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { CurrencyCode, SubcontinentRoute, TravelMonth, TravelStyle } from "@/types/route";
 import { TransitMode } from "@/types/transit";
 import {
@@ -8,6 +9,7 @@ import {
   convertInrToLocalCurrency,
   getSeasonalStatus,
 } from "@/lib/engine/calculator";
+import { downloadTripSummaryCardPng } from "@/components/modes/TripCardExporter";
 import {
   Users,
   Info,
@@ -20,10 +22,15 @@ import {
   Mountain,
   Volume2,
   Printer,
+  Link2,
+  Download,
+  Check,
+  Calculator,
 } from "lucide-react";
 
 interface BudgetMatrixProps {
   route: SubcontinentRoute;
+  originName: string;
   style: TravelStyle;
   onChangeStyle: (style: TravelStyle) => void;
   travelersCount: number;
@@ -35,12 +42,15 @@ interface BudgetMatrixProps {
   intercityTransitPerPersonInr: number;
   activeTransitMode: TransitMode;
   detourApplied: boolean;
+  pureVegFilter: boolean;
   selectedMonth: TravelMonth;
+  shareableUrl: string;
   currencyPref: CurrencyCode;
 }
 
 export function BudgetMatrix({
   route,
+  originName,
   style,
   onChangeStyle,
   travelersCount,
@@ -52,9 +62,19 @@ export function BudgetMatrix({
   intercityTransitPerPersonInr,
   activeTransitMode,
   detourApplied,
+  pureVegFilter,
   selectedMonth,
+  shareableUrl,
   currencyPref,
 }: BudgetMatrixProps) {
+  const [copiedLink, setCopiedLink] = useState(false);
+  const copyTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+    };
+  }, []);
   const breakdown = calculateItemizedBudget(
     route,
     style,
@@ -91,13 +111,13 @@ export function BudgetMatrix({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200/60 dark:border-slate-800/60">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" aria-hidden="true" />
-            <span className="text-[11px] uppercase tracking-wider font-mono text-cyan-600 dark:text-cyan-400 font-bold">
-              VisionOS Spatial Budget Deck
+            <Calculator className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />
+            <span className="text-[11px] uppercase tracking-wider font-mono text-cyan-700 dark:text-cyan-400 font-bold">
+              Spatial Budget Deck
             </span>
             {detourApplied && breakdown.detourSavings > 0 && (
-              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-extrabold">
-                🌿 Bheed Se Door Saved {formatPreferredCurrency(breakdown.detourSavings, currencyPref)}
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-extrabold tabular-nums">
+                Bheed Se Door Saved {formatPreferredCurrency(breakdown.detourSavings, currencyPref)}
               </span>
             )}
           </div>
@@ -105,11 +125,11 @@ export function BudgetMatrix({
             Real-Time All-In Budget Matrix
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-            Includes round-trip <strong>{activeTransitMode.toUpperCase()}</strong> intercity corridor + stays, food, permits & emergency buffer.
+            Includes round-trip <strong>{activeTransitMode.toUpperCase()}</strong> intercity corridor from <strong>{originName}</strong> + stays, food, permits & emergency buffer.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-center print:hidden">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-center print:hidden">
           <div className="flex items-center p-1.5 rounded-2xl bg-slate-200/60 dark:bg-slate-800/70 border border-white/60 dark:border-white/10 shadow-inner">
             {(["backpacker", "comfort", "luxury"] as TravelStyle[]).map((s) => {
               const isActive = style === s;
@@ -123,7 +143,7 @@ export function BudgetMatrix({
                   key={s}
                   type="button"
                   onClick={() => onChangeStyle(s)}
-                  className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all duration-200 capitalize ${
+                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all duration-200 capitalize whitespace-nowrap ${
                     isActive
                       ? "bg-white text-slate-950 shadow-md dark:bg-slate-900 dark:text-cyan-400 shadow-slate-300/40 dark:shadow-black/50"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200"
@@ -138,12 +158,62 @@ export function BudgetMatrix({
 
           <button
             type="button"
+            onClick={async () => {
+              if (typeof navigator !== "undefined" && navigator.clipboard) {
+                try {
+                  await navigator.clipboard.writeText(shareableUrl);
+                  setCopiedLink(true);
+                  if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+                  copyTimerRef.current = window.setTimeout(() => setCopiedLink(false), 2200);
+                } catch {
+                  // Ignored gracefully
+                }
+              }
+            }}
+            title="Copy exact shareable link with origin, transit mode & budget"
+            className="py-2 px-3 rounded-xl visionos-glass border border-slate-300/80 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 tactile-button-3d whitespace-nowrap"
+          >
+            {copiedLink ? (
+              <Check className="w-3.5 h-3.5 text-emerald-500" aria-hidden="true" />
+            ) : (
+              <Link2 className="w-3.5 h-3.5 text-blue-500" aria-hidden="true" />
+            )}
+            <span className="hidden sm:inline">{copiedLink ? "Copied" : "Share Link"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              downloadTripSummaryCardPng({
+                route,
+                originName,
+                activeTransitMode,
+                selectedMonth,
+                style,
+                travelersCount,
+                childCount,
+                breakdown,
+                perPersonCostInr: perPersonCost,
+                detourApplied,
+                pureVegFilter,
+                currencyPref,
+              })
+            }
+            title="Download visual Trip Cost Card PNG for WhatsApp or Instagram"
+            className="py-2 px-3 rounded-xl visionos-glass border border-slate-300/80 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 tactile-button-3d whitespace-nowrap"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-500" aria-hidden="true" />
+            <span className="hidden sm:inline">Card PNG</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => window.print()}
             title="Print or Save Offline PDF Brief for Zero-Network Mountain Zones"
-            className="py-2 px-3.5 rounded-xl visionos-glass border border-slate-300/80 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 tactile-button-3d"
+            className="py-2 px-3 rounded-xl visionos-glass border border-slate-300/80 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 tactile-button-3d whitespace-nowrap"
           >
             <Printer className="w-3.5 h-3.5 text-cyan-500" aria-hidden="true" />
-            <span className="hidden sm:inline">Offline Brief</span>
+            <span className="hidden sm:inline">PDF Brief</span>
           </button>
         </div>
       </div>
@@ -152,7 +222,7 @@ export function BudgetMatrix({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 py-6 items-center">
         <div className="lg:col-span-5 flex flex-col justify-center">
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-950 dark:text-slate-50 font-mono">
+            <span className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-950 dark:text-slate-50 font-mono tabular-nums">
               {formatPreferredCurrency(perPersonCost, currencyPref)}
             </span>
             <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">/ person</span>

@@ -180,6 +180,20 @@ export const MultiModalTransitPlanSchema = z.object({
     ridingGearDepositInr: z.number().nonnegative(),
     mountainPassNotes: z.string(),
   }),
+  flight: z
+    .object({
+      fromAirportCode: z.string(),
+      toAirportCode: z.string(),
+      gatewayAirportName: z.string(),
+      carriers: z.string(),
+      flightDurationHours: z.number().positive(),
+      transferDriveHours: z.number().nonnegative(),
+      oneWayFareInr: z.number().positive(),
+      airportCabToHotelInr: z.number().nonnegative(),
+      isDirect: z.boolean(),
+      proTip: z.string(),
+    })
+    .optional(),
   crossBorderPermit: z
     .object({
       country: z.enum(["NP", "BT"]),

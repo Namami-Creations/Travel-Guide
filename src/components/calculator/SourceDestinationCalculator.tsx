@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { ORIGIN_CITIES } from "@/lib/data/origin-cities";
 import { SUBCONTINENT_ROUTES } from "@/lib/data/subcontinent-routes";
-import { ORIGIN_GEO, resolveMultiModalTransit } from "@/lib/engine/transit-resolver";
+import {
+  ORIGIN_GEO,
+  getIrctcWaitlistPlanB,
+  resolveMultiModalTransit,
+} from "@/lib/engine/transit-resolver";
 import { findDestinationsByBudget } from "@/lib/engine/reverse-budget";
 import { formatPreferredCurrency, getSeasonalStatus } from "@/lib/engine/calculator";
 import { TransitMode } from "@/types/transit";
@@ -12,6 +16,7 @@ import {
   Train,
   Bus,
   Car,
+  Plane,
   Compass,
   ArrowRight,
   Sparkles,
@@ -21,6 +26,7 @@ import {
   Calendar,
   AlertTriangle,
   CheckCircle2,
+  Clock,
 } from "lucide-react";
 
 const TRAVEL_MONTHS: TravelMonth[] = [
@@ -102,7 +108,7 @@ export function SourceDestinationCalculator({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200/60 dark:border-slate-800/60">
         <div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" aria-hidden="true" />
+            <Compass className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
             <span className="text-[11px] uppercase tracking-wider font-mono text-blue-600 dark:text-blue-400 font-bold">
               Spatial Transit & Rupee Engine
             </span>
@@ -331,7 +337,7 @@ export function SourceDestinationCalculator({
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                 <button
                   type="button"
                   onClick={() => onChangeTransitMode("train")}
@@ -345,8 +351,8 @@ export function SourceDestinationCalculator({
                   <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
                     <Train className="w-4 h-4" aria-hidden="true" />
                   </div>
-                  <span className="font-extrabold">Train (IRCTC)</span>
-                  <span className="text-[10px] font-mono text-slate-400">
+                  <span className="font-extrabold whitespace-nowrap">Train (IRCTC)</span>
+                  <span className="text-[10px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
                     ~{currentTransitPlan.train.durationHours}h Rail Line
                   </span>
                 </button>
@@ -364,9 +370,28 @@ export function SourceDestinationCalculator({
                   <div className="w-8 h-8 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
                     <Bus className="w-4 h-4" aria-hidden="true" />
                   </div>
-                  <span className="font-extrabold">Volvo Bus</span>
-                  <span className="text-[10px] font-mono text-slate-400">
+                  <span className="font-extrabold whitespace-nowrap">Volvo Bus</span>
+                  <span className="text-[10px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
                     {formatPreferredCurrency(currentTransitPlan.bus.fareInr, currencyPref)} Seat
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onChangeTransitMode("flight")}
+                  aria-pressed={activeTransitMode === "flight"}
+                  className={`p-3 rounded-2xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all tactile-button-3d ${
+                    activeTransitMode === "flight"
+                      ? "visionos-glass-elevated border-blue-500/60 text-blue-600 dark:text-blue-400 ring-2 ring-blue-500/30"
+                      : "visionos-glass text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                    <Plane className="w-4 h-4" aria-hidden="true" />
+                  </div>
+                  <span className="font-extrabold whitespace-nowrap">Flight + Cab</span>
+                  <span className="text-[10px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                    {formatPreferredCurrency(currentTransitPlan.flight.oneWayFareInr, currencyPref)} Air
                   </span>
                 </button>
 
@@ -383,8 +408,8 @@ export function SourceDestinationCalculator({
                   <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                     <Car className="w-4 h-4" aria-hidden="true" />
                   </div>
-                  <span className="font-extrabold">Car / Road Trip</span>
-                  <span className="text-[10px] font-mono text-slate-400">
+                  <span className="font-extrabold whitespace-nowrap">Car / Road Trip</span>
+                  <span className="text-[10px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
                     {currentTransitPlan.car.distanceKm} km Direct
                   </span>
                 </button>
@@ -393,7 +418,7 @@ export function SourceDestinationCalculator({
                   type="button"
                   onClick={() => onChangeTransitMode("bike")}
                   aria-pressed={activeTransitMode === "bike"}
-                  className={`p-3 rounded-2xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all tactile-button-3d ${
+                  className={`col-span-2 sm:col-span-1 p-3 rounded-2xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all tactile-button-3d ${
                     activeTransitMode === "bike"
                       ? "visionos-glass-elevated border-blue-500/60 text-blue-600 dark:text-blue-400 ring-2 ring-blue-500/30"
                       : "visionos-glass text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -402,8 +427,8 @@ export function SourceDestinationCalculator({
                   <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
                     <Compass className="w-4 h-4" aria-hidden="true" />
                   </div>
-                  <span className="font-extrabold">Bike Rental</span>
-                  <span className="text-[10px] font-mono text-slate-400">
+                  <span className="font-extrabold whitespace-nowrap">Bike Rental</span>
+                  <span className="text-[10px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
                     {formatPreferredCurrency(currentTransitPlan.bike.dailyRentalInr, currencyPref)} / day
                   </span>
                 </button>
@@ -452,7 +477,87 @@ export function SourceDestinationCalculator({
                     </div>
 
                     <p className="text-[11px] text-slate-600 dark:text-slate-400 italic bg-blue-50/50 dark:bg-blue-950/30 p-2.5 rounded-xl border border-blue-200/40 dark:border-blue-900/40">
-                      💡 Pro Rail Tip: {currentTransitPlan.train.proTip}
+                      Pro Rail Tip: {currentTransitPlan.train.proTip}
+                    </p>
+
+                    {/* IRCTC Waitlist & Tatkal Plan B Engine */}
+                    {(() => {
+                      const planB = getIrctcWaitlistPlanB(currentTransitPlan);
+                      return (
+                        <div className="p-3.5 rounded-xl bg-amber-500/10 dark:bg-amber-950/35 border border-amber-500/30 space-y-2.5">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 text-xs font-extrabold text-amber-900 dark:text-amber-200">
+                              <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+                              <span>IRCTC Waitlist / Tatkal Plan B</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => onChangeTransitMode(planB.fallbackMode)}
+                              className="py-1.5 px-3 rounded-lg bg-slate-950 hover:bg-slate-800 dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300 text-white text-[11px] font-bold flex items-center gap-1.5 self-start sm:self-center whitespace-nowrap transition-colors"
+                            >
+                              <span>
+                                Switch to {planB.fallbackMode === "flight" ? "Flight + Cab" : "Volvo Bus"} (
+                                {formatPreferredCurrency(planB.fallbackOneWayInr, currencyPref)})
+                              </span>
+                              <ArrowRight className="w-3 h-3" aria-hidden="true" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] text-slate-700 dark:text-slate-300">
+                            <p>• {planB.arpWindowNote}</p>
+                            <p>• {planB.tatkalWindowNote}</p>
+                          </div>
+                          <p className="text-[11px] font-medium text-amber-950 dark:text-amber-200">
+                            <strong>{planB.fallbackHeadline}:</strong> {planB.actionTip}
+                          </p>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {activeTransitMode === "flight" && (
+                  <div className="space-y-3.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800/60">
+                      <div>
+                        <span className="text-[10px] uppercase font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                          Gateway Air Corridor ({currentTransitPlan.flight.fromAirportCode} →{" "}
+                          {currentTransitPlan.flight.toAirportCode})
+                        </span>
+                        <h4 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
+                          {currentTransitPlan.flight.carriers}
+                        </h4>
+                      </div>
+                      <div className="text-left sm:text-right">
+                        <span className="text-base font-extrabold font-mono tabular-nums text-slate-900 dark:text-slate-100">
+                          {formatPreferredCurrency(currentTransitPlan.flight.oneWayFareInr, currencyPref)}
+                        </span>
+                        <span className="text-[10px] text-slate-500 block">est. 1-way economy</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                      <div className="p-3 rounded-xl visionos-glass border border-slate-200/70 dark:border-slate-800">
+                        <span className="text-slate-500 text-[10px] block">Arrival Airport</span>
+                        <span className="font-bold text-slate-900 dark:text-slate-100">
+                          {currentTransitPlan.flight.gatewayAirportName}
+                        </span>
+                      </div>
+                      <div className="p-3 rounded-xl visionos-glass border border-slate-200/70 dark:border-slate-800">
+                        <span className="text-slate-500 text-[10px] block">Air + Mountain Cab Time</span>
+                        <span className="font-mono font-extrabold tabular-nums text-slate-900 dark:text-slate-100">
+                          {currentTransitPlan.flight.flightDurationHours}h air + {currentTransitPlan.flight.transferDriveHours}h road
+                        </span>
+                      </div>
+                      <div className="col-span-2 sm:col-span-1 p-3 rounded-xl visionos-glass border border-slate-200/70 dark:border-slate-800">
+                        <span className="text-slate-500 text-[10px] block">Airport Transfer Cab (1-way)</span>
+                        <span className="font-mono font-extrabold tabular-nums text-slate-900 dark:text-slate-100">
+                          {formatPreferredCurrency(currentTransitPlan.flight.airportCabToHotelInr, currencyPref)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 italic bg-indigo-50/50 dark:bg-indigo-950/30 p-2.5 rounded-xl border border-indigo-200/40 dark:border-indigo-900/40">
+                      Flight + Transfer Tip: {currentTransitPlan.flight.proTip}
                     </p>
                   </div>
                 )}

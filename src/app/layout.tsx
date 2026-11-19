@@ -68,6 +68,28 @@ export default function RootLayout({
         <div className="ambient-glow-blue" aria-hidden="true" />
         <div className="ambient-glow-emerald" aria-hidden="true" />
 
+        {/* Structured Data for Subcontinent Travel Calculator */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "DesiRoute OS",
+              url: "https://desiroute.in",
+              applicationCategory: "TravelApplication",
+              operatingSystem: "Web",
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "INR",
+              },
+              description:
+                "Deterministic Rupee travel budget calculator, 5-mode transit matrix (IRCTC Train, Volvo Bus, Flight + Cab, Car, Bike), interactive India-Nepal-Bhutan border readiness wizard, and UPI group expense splitter.",
+            }).replace(/</g, "\\u003c"),
+          }}
+        />
+
         <DesiRouteProvider>
           <div className="relative z-10 flex flex-col flex-1">{children}</div>
         </DesiRouteProvider>
