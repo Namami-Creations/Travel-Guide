@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { CountryCode, TravelMonth, TravelStyle } from "@/types/route";
 import { TransitMode } from "@/types/transit";
 import { SUBCONTINENT_ROUTES } from "@/lib/data/subcontinent-routes";
@@ -38,8 +39,8 @@ import {
 } from "lucide-react";
 
 export function HomePlannerClient() {
+  const searchParams = useSearchParams();
   const {
-    hydrated,
     profile,
     settings,
     savedRouteIds,
@@ -47,9 +48,18 @@ export function HomePlannerClient() {
     updateProfile,
   } = useDesiRoute();
 
+  const queryRouteParam = searchParams.get("route");
+  const initialMatchedRouteId = useMemo(() => {
+    if (!queryRouteParam) return "bt-paro-thimphu";
+    return SUBCONTINENT_ROUTES.find((r) => r.id === queryRouteParam)?.id ?? "bt-paro-thimphu";
+  }, [queryRouteParam]);
+
+  const initialTab: "planner" | "magazine" =
+    searchParams.get("tab") === "magazine" ? "magazine" : "planner";
+
   const [selectedCountry, setSelectedCountry] = useState<CountryCode | "ALL">("ALL");
-  const [selectedOrigin, setSelectedOrigin] = useState<string>("delhi");
-  const [selectedRouteId, setSelectedRouteId] = useState<string>("bt-paro-thimphu");
+  const [originOverride, setOriginOverride] = useState<string | null>(null);
+  const [routeOverride, setRouteOverride] = useState<string | null>(null);
   const [activeTransitMode, setActiveTransitMode] = useState<TransitMode>("train");
   const [selectedMonth, setSelectedMonth] = useState<TravelMonth>("May");
 
@@ -57,51 +67,19 @@ export function HomePlannerClient() {
   const [travelersCount, setTravelersCount] = useState<number>(2);
   const [childCount, setChildCount] = useState<number>(0);
   const [budgetMultiplier, setBudgetMultiplier] = useState<number>(1.0);
-  const [pureVegFilter, setPureVegFilter] = useState<boolean>(true);
-  const [jainFilter, setJainFilter] = useState<boolean>(false);
   const [appliedDetourIds, setAppliedDetourIds] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState<"planner" | "magazine">("planner");
+  const [tabOverride, setTabOverride] = useState<"planner" | "magazine" | null>(null);
 
   // Dynamic Mode States
   const [isFairShareOpen, setIsFairShareOpen] = useState<boolean>(false);
   const [isNinePmOpen, setIsNinePmOpen] = useState<boolean>(false);
   const [isSukoonActive, setIsSukoonActive] = useState<boolean>(false);
 
-  // Sync user profile defaults & URL `?route=` parameter once hydrated on client
-  useEffect(() => {
-    if (!hydrated) return;
-
-    if (profile.homeCityId) {
-      setSelectedOrigin(profile.homeCityId);
-    }
-
-    if (profile.dietaryType === "jain") {
-      setPureVegFilter(true);
-      setJainFilter(true);
-    } else if (profile.dietaryType === "pure-veg") {
-      setPureVegFilter(true);
-      setJainFilter(false);
-    } else {
-      setPureVegFilter(false);
-      setJainFilter(false);
-    }
-
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const requestedRoute = params.get("route");
-      if (requestedRoute) {
-        const matched = SUBCONTINENT_ROUTES.find((r) => r.id === requestedRoute);
-        if (matched) {
-          setSelectedRouteId(matched.id);
-          setSelectedCountry("ALL");
-          setActiveTab("planner");
-        }
-      }
-      if (params.get("tab") === "magazine") {
-        setActiveTab("magazine");
-      }
-    }
-  }, [hydrated, profile.homeCityId, profile.dietaryType]);
+  const selectedOrigin = originOverride ?? profile.homeCityId ?? "delhi";
+  const selectedRouteId = routeOverride ?? initialMatchedRouteId;
+  const activeTab = tabOverride ?? initialTab;
+  const pureVegFilter = profile.dietaryType === "pure-veg" || profile.dietaryType === "jain";
+  const jainFilter = profile.dietaryType === "jain";
 
   // Filter routes by country
   const filteredRoutes = useMemo(
@@ -170,9 +148,7 @@ export function HomePlannerClient() {
 
   const handleTogglePureVegHeader = () => {
     const nextPureVeg = !pureVegFilter;
-    setPureVegFilter(nextPureVeg);
     if (!nextPureVeg) {
-      setJainFilter(false);
       updateProfile({ dietaryType: "all" });
     } else {
       updateProfile({ dietaryType: jainFilter ? "jain" : "pure-veg" });
@@ -181,9 +157,7 @@ export function HomePlannerClient() {
 
   const handleToggleJain = () => {
     const nextJain = !jainFilter;
-    setJainFilter(nextJain);
     if (nextJain) {
-      setPureVegFilter(true);
       updateProfile({ dietaryType: "jain" });
     } else {
       updateProfile({ dietaryType: pureVegFilter ? "pure-veg" : "all" });
@@ -198,9 +172,9 @@ export function HomePlannerClient() {
   };
 
   const handleRouteSelectFromArticle = (routeId: string) => {
-    setSelectedRouteId(routeId);
+    setRouteOverride(routeId);
     setSelectedCountry("ALL");
-    setActiveTab("planner");
+    setTabOverride("planner");
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 380, behavior: "smooth" });
     }
@@ -215,7 +189,7 @@ export function HomePlannerClient() {
           setSelectedCountry(c);
           const firstInCountry = SUBCONTINENT_ROUTES.find((r) => c === "ALL" || r.country === c);
           if (firstInCountry) {
-            setSelectedRouteId(firstInCountry.id);
+            setRouteOverride(firstInCountry.id);
           }
         }}
         pureVegFilter={pureVegFilter}
@@ -250,7 +224,7 @@ export function HomePlannerClient() {
             <div className="inline-flex items-center p-1.5 rounded-2xl bg-slate-200/70 dark:bg-slate-800/70 border border-white/60 dark:border-white/10 shadow-inner">
               <button
                 type="button"
-                onClick={() => setActiveTab("planner")}
+                onClick={() => setTabOverride("planner")}
                 aria-pressed={activeTab === "planner"}
                 className={`py-2 px-4 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition-all tactile-button-3d ${
                   activeTab === "planner"
@@ -263,7 +237,7 @@ export function HomePlannerClient() {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("magazine")}
+                onClick={() => setTabOverride("magazine")}
                 aria-pressed={activeTab === "magazine"}
                 className={`py-2 px-4 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition-all tactile-button-3d ${
                   activeTab === "magazine"
@@ -299,10 +273,10 @@ export function HomePlannerClient() {
             {/* Source to Destination Multi-Modal Calculator & Reverse Budget */}
             <SourceDestinationCalculator
               selectedOrigin={selectedOrigin}
-              onChangeOrigin={setSelectedOrigin}
+              onChangeOrigin={setOriginOverride}
               selectedDestination={activeRoute.id}
               onSelectRoute={(routeId) => {
-                setSelectedRouteId(routeId);
+                setRouteOverride(routeId);
                 setSelectedCountry("ALL");
               }}
               activeTransitMode={activeTransitMode}
@@ -367,7 +341,7 @@ export function HomePlannerClient() {
 
                       <button
                         type="button"
-                        onClick={() => setSelectedRouteId(route.id)}
+                        onClick={() => setRouteOverride(route.id)}
                         aria-pressed={isSelected}
                         className="text-left flex-1 flex flex-col justify-between focus:outline-none"
                       >

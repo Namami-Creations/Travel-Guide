@@ -162,4 +162,24 @@ const upiLink = generateUpiDeepLink({
 assert(upiLink.startsWith("upi://pay?") && upiLink.includes("am=4501"), "UPI deep link invalid");
 console.log("✓ Currency, seasonal alerts, and UPI validation passed.\n");
 
+// 6. End-to-End Corridor Check: Delhi -> Tirthan Comfort + Volvo Bus + Bheed Se Door <= ₹20,000
+const tirthanRoute = SUBCONTINENT_ROUTES.find((r) => r.id === "in-himachal-tirthan")!;
+const manaliTransit = resolveMultiModalTransit("delhi", "in-himachal-tirthan");
+assert(Boolean(manaliTransit), "Failed to resolve Delhi -> Tirthan transit plan");
+const roundTripBus = getRoundTripIntercityPerPersonInr(
+  manaliTransit,
+  "bus",
+  "comfort",
+  1,
+  tirthanRoute.durationDays
+);
+const tirthanUnified = calculateItemizedBudget(tirthanRoute, "comfort", 1, 0, 1.0, {
+  intercityTransitPerPersonInr: roundTripBus,
+  detourApplied: true,
+});
+assert(
+  tirthanUnified.total <= 20000,
+  `Expected Delhi -> Tirthan Comfort+Bus+Detour total <= ₹20,000, got ${tirthanUnified.total}`
+);
+
 console.log("🎉 All Audit Tests Passed with 100% Integrity!");

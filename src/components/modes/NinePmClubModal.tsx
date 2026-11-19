@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { SubcontinentRoute } from "@/types/route";
 import { Modal } from "@/components/ui/Modal";
 import { useDesiRoute } from "@/lib/context/DesiRouteContext";
@@ -18,7 +18,12 @@ function formatClock(totalSeconds: number): string {
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
-export function NinePmClubModal({ isOpen, onClose, route }: NinePmClubModalProps) {
+export function NinePmClubModal(props: NinePmClubModalProps) {
+  if (!props.isOpen) return null;
+  return <NinePmClubModalContent key={props.route.id} {...props} />;
+}
+
+function NinePmClubModalContent({ isOpen, onClose, route }: NinePmClubModalProps) {
   const { rsvpedRouteIds, toggleRsvpRoute } = useDesiRoute();
   const [isPlaying, setIsPlaying] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -33,7 +38,7 @@ export function NinePmClubModal({ isOpen, onClose, route }: NinePmClubModalProps
 
   // Real playback ticker & gentle Web Audio Himalayan singing-bowl drone
   useEffect(() => {
-    if (!isOpen || !isPlaying) {
+    if (!isPlaying) {
       if (oscRef.current) {
         try {
           oscRef.current.stop();
@@ -46,7 +51,7 @@ export function NinePmClubModal({ isOpen, onClose, route }: NinePmClubModalProps
       return;
     }
 
-    // Attempt subtle calming ambient singing bowl harmonic (432 Hz soft sine fade)
+    // Attempt subtle calming ambient singing bowl harmonic (174 Hz soft sine fade)
     try {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
@@ -93,17 +98,7 @@ export function NinePmClubModal({ isOpen, onClose, route }: NinePmClubModalProps
         oscRef.current = null;
       }
     };
-  }, [isOpen, isPlaying, totalSeconds]);
-
-  // Reset playing state when modal closes or route switches
-  useEffect(() => {
-    if (!isOpen) setIsPlaying(false);
-  }, [isOpen]);
-
-  useEffect(() => {
-    setIsPlaying(false);
-    setElapsedSeconds(0);
-  }, [route.id]);
+  }, [isPlaying, totalSeconds]);
 
   const progressPct = Math.min(100, Math.round((elapsedSeconds / Math.max(1, totalSeconds)) * 100));
 

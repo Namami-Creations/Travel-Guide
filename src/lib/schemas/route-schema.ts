@@ -1,9 +1,27 @@
 import { z } from "zod";
 
-export const CountryCodeSchema = z.enum(["IN", "NP", "BT"]);
-export const TravelStyleSchema = z.enum(["backpacker", "comfort", "luxury"]);
-export const DietaryTypeSchema = z.enum(["all", "pure-veg", "jain", "halal"]);
-export const TravelMonthSchema = z.enum([
+const CountryCodeSchema = z.enum(["IN", "NP", "BT"]);
+const PermitRuleSchema = z.object({
+  required: z.boolean(),
+  name: z.string(),
+  costInrPerPerson: z.number().nonnegative(),
+  isDailyFee: z.boolean().optional(),
+  documentsRequired: z.array(z.string()),
+  officialPortalUrl: z.string().url(),
+  processingTimeDays: z.number().nonnegative(),
+  notes: z.string(),
+});
+
+const DetourAlternativeSchema = z.object({
+  popularCrowdedSpot: z.string(),
+  crowdLevel: z.enum(["High", "Extreme"]),
+  counterpartSpot: z.string(),
+  distanceKm: z.number().nonnegative(),
+  savingsPercentage: z.number().min(0).max(100),
+  whyBetter: z.string(),
+});
+
+const TravelMonthSchema = z.enum([
   "Jan",
   "Feb",
   "Mar",
@@ -18,34 +36,14 @@ export const TravelMonthSchema = z.enum([
   "Dec",
 ]);
 
-export const PermitRuleSchema = z.object({
-  required: z.boolean(),
-  name: z.string(),
-  costInrPerPerson: z.number().nonnegative(),
-  isDailyFee: z.boolean().optional(),
-  documentsRequired: z.array(z.string()),
-  officialPortalUrl: z.string().url(),
-  processingTimeDays: z.number().nonnegative(),
-  notes: z.string(),
-});
-
-export const DetourAlternativeSchema = z.object({
-  popularCrowdedSpot: z.string(),
-  crowdLevel: z.enum(["High", "Extreme"]),
-  counterpartSpot: z.string(),
-  distanceKm: z.number().nonnegative(),
-  savingsPercentage: z.number().min(0).max(100),
-  whyBetter: z.string(),
-});
-
-export const SeasonalAlertSchema = z.object({
+const SeasonalAlertSchema = z.object({
   cautionMonths: z.array(TravelMonthSchema),
   closedMonths: z.array(TravelMonthSchema).optional(),
   advisory: z.string(),
   peakMonths: z.array(TravelMonthSchema),
 });
 
-export const DayActivitySchema = z.object({
+const DayActivitySchema = z.object({
   timeOfDay: z.enum(["Morning", "Afternoon", "Evening"]),
   title: z.string(),
   description: z.string(),
@@ -63,7 +61,7 @@ export const DayActivitySchema = z.object({
   transitNote: z.string().optional(),
 });
 
-export const ItineraryDaySchema = z.object({
+const ItineraryDaySchema = z.object({
   dayNumber: z.number().positive(),
   theme: z.string(),
   activities: z.array(DayActivitySchema).min(1),

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { CurrencyCode, SubcontinentRoute } from "@/types/route";
 import {
   formatPreferredCurrency,
@@ -27,7 +27,33 @@ interface GroupVoteMember {
   wakeUp: string;
 }
 
-export function FairShareModal({
+function buildInitialRoster(travelersCount: number, perPersonBudgetInr: number): GroupVoteMember[] {
+  const count = Math.max(1, travelersCount);
+  const initial: GroupVoteMember[] = [
+    { id: "m-0", name: "You (Organizer)", budgetCap: perPersonBudgetInr, wakeUp: "8:00 AM" },
+  ];
+  for (let i = 1; i < count; i++) {
+    initial.push({
+      id: `m-${i}`,
+      name: `Co-Traveler ${i + 1}`,
+      budgetCap: Math.max(5000, perPersonBudgetInr + (i % 2 === 0 ? 2000 : -1500)),
+      wakeUp: i % 2 === 0 ? "7:30 AM" : "9:30 AM",
+    });
+  }
+  return initial;
+}
+
+export function FairShareModal(props: FairShareModalProps) {
+  if (!props.isOpen) return null;
+  return (
+    <FairShareModalContent
+      key={`${props.route.id}-${props.travelersCount}-${props.perPersonBudgetInr}`}
+      {...props}
+    />
+  );
+}
+
+function FairShareModalContent({
   isOpen,
   onClose,
   route,
@@ -40,26 +66,11 @@ export function FairShareModal({
   const [shareCopied, setShareCopied] = useState(false);
   const copyTimerRef = useRef<number | null>(null);
 
-  const [members, setMembers] = useState<GroupVoteMember[]>([]);
+  const [members, setMembers] = useState<GroupVoteMember[]>(() =>
+    buildInitialRoster(travelersCount, perPersonBudgetInr)
+  );
   const [newFriendName, setNewFriendName] = useState("");
   const [newFriendBudget, setNewFriendBudget] = useState<string>(String(perPersonBudgetInr));
-
-  // Sync realistic initial roster to travelersCount when opened
-  useEffect(() => {
-    if (!isOpen) return;
-    const count = Math.max(1, travelersCount);
-    const initial: GroupVoteMember[] = [{ id: "m-0", name: "You (Organizer)", budgetCap: perPersonBudgetInr, wakeUp: "8:00 AM" }];
-    for (let i = 1; i < count; i++) {
-      initial.push({
-        id: `m-${i}`,
-        name: `Co-Traveler ${i + 1}`,
-        budgetCap: Math.max(5000, perPersonBudgetInr + (i % 2 === 0 ? 2000 : -1500)),
-        wakeUp: i % 2 === 0 ? "7:30 AM" : "9:30 AM",
-      });
-    }
-    setMembers(initial);
-    setNewFriendBudget(String(perPersonBudgetInr));
-  }, [isOpen, travelersCount, perPersonBudgetInr]);
 
   useEffect(() => {
     return () => {
@@ -101,7 +112,7 @@ export function FairShareModal({
     }
   };
 
-  const handleAddFriend = (e: React.FormEvent) => {
+  const handleAddFriend = (e: FormEvent) => {
     e.preventDefault();
     const cleanedName = newFriendName.trim();
     const parsedCap = parseInt(newFriendBudget, 10);

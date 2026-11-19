@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { CurrencyCode, SubcontinentRoute, TravelMonth, TravelStyle } from "@/types/route";
 import { TransitMode } from "@/types/transit";
 import {

@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { CurrencyCode, DetourAlternative, DietaryType, ItineraryDay } from "@/types/route";
 import { formatPreferredCurrency } from "@/lib/engine/calculator";
 import { Clock, Utensils, Bus, Compass } from "lucide-react";

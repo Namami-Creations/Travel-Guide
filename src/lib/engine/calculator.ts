@@ -54,9 +54,25 @@ export function calculateItemizedBudget(
     }
   }
 
-  // Distribution weights based on travel style (land stays, local cabs/transfers, food, activities, buffer)
+  // Explicit intercity transit from selected Origin + Mode (defaults to 0 if not passed so pure land tests stay exact)
+  const rawIntercityPerPerson =
+    Number.isFinite(options.intercityTransitPerPersonInr) && (options.intercityTransitPerPersonInr ?? 0) > 0
+      ? Math.round(options.intercityTransitPerPersonInr!)
+      : 0;
+  const intercityTransit = rawIntercityPerPerson * safeTravelers;
+
+  // Distribution weights based on travel style; avoid double-counting intercity fares when explicitly injected
   const staysRatio = style === "luxury" ? 0.42 : style === "comfort" ? 0.38 : 0.32;
-  const transitRatio = style === "luxury" ? 0.28 : style === "comfort" ? 0.25 : 0.28;
+  const localTransitRatio =
+    rawIntercityPerPerson > 0
+      ? style === "luxury"
+        ? 0.14
+        : 0.12
+      : style === "luxury"
+      ? 0.28
+      : style === "comfort"
+      ? 0.25
+      : 0.28;
   const foodRatio = style === "luxury" ? 0.16 : style === "comfort" ? 0.18 : 0.22;
   const activitiesRatio = 0.10;
   const bufferRatio = 0.08;
@@ -64,17 +80,10 @@ export function calculateItemizedBudget(
   const totalBaseCostAllTravelers = basePerPerson * safeTravelers;
 
   const staysRaw = Math.round(totalBaseCostAllTravelers * staysRatio);
-  const localTransit = Math.round(totalBaseCostAllTravelers * transitRatio);
+  const localTransit = Math.round(totalBaseCostAllTravelers * localTransitRatio);
   const food = Math.round(totalBaseCostAllTravelers * foodRatio);
   const activitiesRaw = Math.round(totalBaseCostAllTravelers * activitiesRatio);
   const buffer = Math.round(totalBaseCostAllTravelers * bufferRatio);
-
-  // Explicit intercity transit from selected Origin + Mode (defaults to 0 if not passed so pure land tests stay exact)
-  const rawIntercityPerPerson =
-    Number.isFinite(options.intercityTransitPerPersonInr) && (options.intercityTransitPerPersonInr ?? 0) > 0
-      ? Math.round(options.intercityTransitPerPersonInr!)
-      : 0;
-  const intercityTransit = rawIntercityPerPerson * safeTravelers;
 
   // Apply Bheed Se Door detour savings (fraction applied against inflated tourist-trap stay & activity markups)
   const detourRate = options.detourApplied ? (route.detour.savingsPercentage / 100) * 0.45 : 0;

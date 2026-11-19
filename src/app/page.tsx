@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { HomePlannerClient } from "@/components/planner/HomePlannerClient";
 
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <HomePlannerClient />;
+  return (
+    <Suspense fallback={<div className="min-h-screen" aria-busy="true" />}>
+      <HomePlannerClient />
+    </Suspense>
+  );
 }

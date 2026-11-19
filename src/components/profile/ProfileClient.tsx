@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Header } from "@/components/navigation/Header";
 import { Footer } from "@/components/navigation/Footer";
-import { useDesiRoute } from "@/lib/context/DesiRouteContext";
+import { useDesiRoute, type TravelerProfile } from "@/lib/context/DesiRouteContext";
 import { ORIGIN_CITIES } from "@/lib/data/origin-cities";
 import { SUBCONTINENT_ROUTES } from "@/lib/data/subcontinent-routes";
 import { formatPreferredCurrency } from "@/lib/engine/calculator";
@@ -28,19 +28,14 @@ export function ProfileClient() {
     toggleSavedRoute,
   } = useDesiRoute();
 
-  const [travelerName, setTravelerName] = useState(profile.travelerName);
-  const [homeCityId, setHomeCityId] = useState(profile.homeCityId);
-  const [travelerVibe, setTravelerVibe] = useState(profile.travelerVibe);
-  const [dietaryType, setDietaryType] = useState<DietaryType>(profile.dietaryType);
+  const [draft, setDraft] = useState<Partial<TravelerProfile>>({});
   const [savedSuccess, setSavedSuccess] = useState(false);
   const toastTimerRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    setTravelerName(profile.travelerName);
-    setHomeCityId(profile.homeCityId);
-    setTravelerVibe(profile.travelerVibe);
-    setDietaryType(profile.dietaryType);
-  }, [profile]);
+  const travelerName = draft.travelerName ?? profile.travelerName;
+  const homeCityId = draft.homeCityId ?? profile.homeCityId;
+  const travelerVibe = draft.travelerVibe ?? profile.travelerVibe;
+  const dietaryType = draft.dietaryType ?? profile.dietaryType;
 
   useEffect(() => {
     return () => {
@@ -69,7 +64,7 @@ export function ProfileClient() {
     [savedRoutes]
   );
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = (e: FormEvent) => {
     e.preventDefault();
     const cleanedName = travelerName.trim() || "Explorer";
     updateProfile({
@@ -78,6 +73,7 @@ export function ProfileClient() {
       travelerVibe,
       dietaryType,
     });
+    setDraft({});
     setSavedSuccess(true);
     if (toastTimerRef.current !== null) {
       window.clearTimeout(toastTimerRef.current);
@@ -91,7 +87,7 @@ export function ProfileClient() {
         pureVegFilter={dietaryType === "pure-veg" || dietaryType === "jain"}
         onTogglePureVeg={() => {
           const nextDiet: DietaryType = dietaryType === "all" ? "pure-veg" : "all";
-          setDietaryType(nextDiet);
+          setDraft((prev) => ({ ...prev, dietaryType: nextDiet }));
           updateProfile({ dietaryType: nextDiet });
         }}
       />
@@ -198,7 +194,7 @@ export function ProfileClient() {
                 id="traveler-name-input"
                 type="text"
                 value={travelerName}
-                onChange={(e) => setTravelerName(e.target.value)}
+                onChange={(e) => setDraft((prev) => ({ ...prev, travelerName: e.target.value }))}
                 maxLength={50}
                 className="w-full p-3 rounded-xl visionos-glass border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold"
               />
@@ -214,7 +210,7 @@ export function ProfileClient() {
               <select
                 id="home-city-select"
                 value={homeCityId}
-                onChange={(e) => setHomeCityId(e.target.value)}
+                onChange={(e) => setDraft((prev) => ({ ...prev, homeCityId: e.target.value }))}
                 className="w-full p-3 rounded-xl visionos-glass border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold"
               >
                 {ORIGIN_CITIES.map((city) => (
@@ -236,7 +232,10 @@ export function ProfileClient() {
                 id="travel-vibe-select"
                 value={travelerVibe}
                 onChange={(e) =>
-                  setTravelerVibe(e.target.value as "solo" | "couple" | "friends" | "family")
+                  setDraft((prev) => ({
+                    ...prev,
+                    travelerVibe: e.target.value as TravelerProfile["travelerVibe"],
+                  }))
                 }
                 className="w-full p-3 rounded-xl visionos-glass border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold"
               >
@@ -257,7 +256,9 @@ export function ProfileClient() {
               <select
                 id="diet-filter-select"
                 value={dietaryType}
-                onChange={(e) => setDietaryType(e.target.value as DietaryType)}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, dietaryType: e.target.value as DietaryType }))
+                }
                 className="w-full p-3 rounded-xl visionos-glass border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold"
               >
                 <option value="pure-veg">Pure Vegetarian Verified</option>

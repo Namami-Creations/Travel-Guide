@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { EDITORIAL_ARTICLES } from "@/lib/data/editorial-articles";
 import { EditorialArticle } from "@/types/article";

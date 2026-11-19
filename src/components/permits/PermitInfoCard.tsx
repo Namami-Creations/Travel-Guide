@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { PermitRule, CountryCode, CurrencyCode } from "@/types/route";
 import { formatPreferredCurrency } from "@/lib/engine/calculator";
 import { ShieldCheck, ExternalLink, FileText, AlertCircle } from "lucide-react";

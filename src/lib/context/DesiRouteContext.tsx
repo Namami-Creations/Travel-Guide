@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useMemo,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { CurrencyCode, DietaryType } from "@/types/route";
 
 export interface TravelerProfile {
@@ -12,7 +19,6 @@ export interface TravelerProfile {
 
 export interface AppSettings {
   currencyPref: CurrencyCode;
-  offlineCache: boolean;
   ghostMode: boolean;
 }
 
@@ -34,11 +40,101 @@ const DEFAULT_PROFILE: TravelerProfile = {
 
 const DEFAULT_SETTINGS: AppSettings = {
   currencyPref: "INR",
-  offlineCache: true,
   ghostMode: false,
 };
 
 const DEFAULT_SAVED_ROUTES = ["bt-paro-thimphu", "np-ktm-pokhara", "in-himachal-tirthan"];
+
+const SERVER_SNAPSHOT: StoredPayload = {
+  profile: DEFAULT_PROFILE,
+  settings: DEFAULT_SETTINGS,
+  savedRouteIds: DEFAULT_SAVED_ROUTES,
+  rsvpedRouteIds: [],
+};
+
+let clientState: StoredPayload | null = null;
+const listeners = new Set<() => void>();
+
+function emitChange() {
+  listeners.forEach((listener) => listener());
+}
+
+function readInitialClientState(): StoredPayload {
+  if (clientState) return clientState;
+  if (typeof window === "undefined") return SERVER_SNAPSHOT;
+
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<StoredPayload>;
+      clientState = {
+        profile: parsed.profile ? { ...DEFAULT_PROFILE, ...parsed.profile } : DEFAULT_PROFILE,
+        settings: parsed.settings
+          ? {
+              currencyPref: parsed.settings.currencyPref ?? DEFAULT_SETTINGS.currencyPref,
+              ghostMode: Boolean(parsed.settings.ghostMode),
+            }
+          : DEFAULT_SETTINGS,
+        savedRouteIds: Array.isArray(parsed.savedRouteIds)
+          ? parsed.savedRouteIds
+          : DEFAULT_SAVED_ROUTES,
+        rsvpedRouteIds: Array.isArray(parsed.rsvpedRouteIds) ? parsed.rsvpedRouteIds : [],
+      };
+      return clientState;
+    }
+  } catch (err) {
+    console.warn("Could not read saved DesiRoute preferences:", err);
+  }
+
+  clientState = SERVER_SNAPSHOT;
+  return clientState;
+}
+
+function persistClientState(next: StoredPayload) {
+  clientState = next;
+  if (typeof window !== "undefined") {
+    try {
+      if (next.settings.ghostMode) {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } else {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      }
+    } catch (err) {
+      console.warn("Could not persist DesiRoute preferences:", err);
+    }
+  }
+  emitChange();
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === STORAGE_KEY || e.key === null) {
+      clientState = null;
+      readInitialClientState();
+      emitChange();
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", handleStorage);
+  }
+  return () => {
+    listeners.delete(listener);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", handleStorage);
+    }
+  };
+}
+
+function getClientSnapshot(): StoredPayload {
+  return readInitialClientState();
+}
+
+function getServerSnapshot(): StoredPayload {
+  return SERVER_SNAPSHOT;
+}
+
+const subscribeHydrated = () => () => {};
 
 interface DesiRouteContextValue {
   hydrated: boolean;
@@ -56,94 +152,57 @@ interface DesiRouteContextValue {
 
 const DesiRouteContext = createContext<DesiRouteContextValue | null>(null);
 
-function measureBrowserStorageKb(): number {
-  if (typeof window === "undefined") return 0;
-  try {
-    let totalBytes = 0;
-    for (let i = 0; i < window.localStorage.length; i++) {
-      const k = window.localStorage.key(i);
-      if (!k) continue;
-      const v = window.localStorage.getItem(k) || "";
-      totalBytes += (k.length + v.length) * 2;
-    }
-    for (let i = 0; i < window.sessionStorage.length; i++) {
-      const k = window.sessionStorage.key(i);
-      if (!k) continue;
-      const v = window.sessionStorage.getItem(k) || "";
-      totalBytes += (k.length + v.length) * 2;
-    }
-    return Number((totalBytes / 1024).toFixed(2));
-  } catch {
-    return 0;
-  }
-}
+export function DesiRouteProvider({ children }: { children: ReactNode }) {
+  const state = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+  const hydrated = useSyncExternalStore(
+    subscribeHydrated,
+    () => true,
+    () => false
+  );
 
-export function DesiRouteProvider({ children }: { children: React.ReactNode }) {
-  const [hydrated, setHydrated] = useState(false);
-  const [profile, setProfile] = useState<TravelerProfile>(DEFAULT_PROFILE);
-  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-  const [savedRouteIds, setSavedRouteIds] = useState<string[]>(DEFAULT_SAVED_ROUTES);
-  const [rsvpedRouteIds, setRsvpedRouteIds] = useState<string[]>([]);
-  const [storageUsageKb, setStorageUsageKb] = useState<number>(0);
-
-  // Hydrate once on client mount
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<StoredPayload>;
-        if (parsed.profile) setProfile({ ...DEFAULT_PROFILE, ...parsed.profile });
-        if (parsed.settings) setSettings({ ...DEFAULT_SETTINGS, ...parsed.settings });
-        if (Array.isArray(parsed.savedRouteIds)) setSavedRouteIds(parsed.savedRouteIds);
-        if (Array.isArray(parsed.rsvpedRouteIds)) setRsvpedRouteIds(parsed.rsvpedRouteIds);
-      }
-    } catch (err) {
-      console.warn("Could not read saved DesiRoute preferences:", err);
-    } finally {
-      setStorageUsageKb(measureBrowserStorageKb());
-      setHydrated(true);
-    }
-  }, []);
-
-  // Persist changes when hydrated and ghostMode is OFF
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      if (settings.ghostMode) {
-        window.localStorage.removeItem(STORAGE_KEY);
-      } else {
-        const payload: StoredPayload = {
-          profile,
-          settings,
-          savedRouteIds,
-          rsvpedRouteIds,
-        };
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-      }
-    } catch (err) {
-      console.warn("Could not persist DesiRoute preferences:", err);
-    }
-    setStorageUsageKb(measureBrowserStorageKb());
-  }, [hydrated, profile, settings, savedRouteIds, rsvpedRouteIds]);
+  const storageUsageKb = useMemo(() => {
+    if (!hydrated || state.settings.ghostMode) return 0;
+    const serialized = JSON.stringify(state);
+    const bytes = (STORAGE_KEY.length + serialized.length) * 2;
+    return Number((bytes / 1024).toFixed(2));
+  }, [hydrated, state]);
 
   const updateProfile = useCallback((partial: Partial<TravelerProfile>) => {
-    setProfile((prev) => ({ ...prev, ...partial }));
+    const current = readInitialClientState();
+    persistClientState({
+      ...current,
+      profile: { ...current.profile, ...partial },
+    });
   }, []);
 
   const updateSettings = useCallback((partial: Partial<AppSettings>) => {
-    setSettings((prev) => ({ ...prev, ...partial }));
+    const current = readInitialClientState();
+    persistClientState({
+      ...current,
+      settings: { ...current.settings, ...partial },
+    });
   }, []);
 
   const toggleSavedRoute = useCallback((routeId: string) => {
-    setSavedRouteIds((prev) =>
-      prev.includes(routeId) ? prev.filter((id) => id !== routeId) : [...prev, routeId]
-    );
+    const current = readInitialClientState();
+    const exists = current.savedRouteIds.includes(routeId);
+    persistClientState({
+      ...current,
+      savedRouteIds: exists
+        ? current.savedRouteIds.filter((id) => id !== routeId)
+        : [...current.savedRouteIds, routeId],
+    });
   }, []);
 
   const toggleRsvpRoute = useCallback((routeId: string) => {
-    setRsvpedRouteIds((prev) =>
-      prev.includes(routeId) ? prev.filter((id) => id !== routeId) : [...prev, routeId]
-    );
+    const current = readInitialClientState();
+    const exists = current.rsvpedRouteIds.includes(routeId);
+    persistClientState({
+      ...current,
+      rsvpedRouteIds: exists
+        ? current.rsvpedRouteIds.filter((id) => id !== routeId)
+        : [...current.rsvpedRouteIds, routeId],
+    });
   }, []);
 
   const wipeAllMetadata = useCallback(() => {
@@ -155,32 +214,44 @@ export function DesiRouteProvider({ children }: { children: React.ReactNode }) {
         console.error("Storage wipe failed:", err);
       }
     }
-    setProfile(DEFAULT_PROFILE);
-    setSettings({ ...DEFAULT_SETTINGS, ghostMode: true });
-    setSavedRouteIds([]);
-    setRsvpedRouteIds([]);
-    setStorageUsageKb(0);
+    persistClientState({
+      profile: DEFAULT_PROFILE,
+      settings: { ...DEFAULT_SETTINGS, ghostMode: true },
+      savedRouteIds: [],
+      rsvpedRouteIds: [],
+    });
   }, []);
 
-  return (
-    <DesiRouteContext.Provider
-      value={{
-        hydrated,
-        profile,
-        settings,
-        savedRouteIds,
-        rsvpedRouteIds,
-        storageUsageKb,
-        updateProfile,
-        updateSettings,
-        toggleSavedRoute,
-        toggleRsvpRoute,
-        wipeAllMetadata,
-      }}
-    >
-      {children}
-    </DesiRouteContext.Provider>
+  const value = useMemo<DesiRouteContextValue>(
+    () => ({
+      hydrated,
+      profile: state.profile,
+      settings: state.settings,
+      savedRouteIds: state.savedRouteIds,
+      rsvpedRouteIds: state.rsvpedRouteIds,
+      storageUsageKb,
+      updateProfile,
+      updateSettings,
+      toggleSavedRoute,
+      toggleRsvpRoute,
+      wipeAllMetadata,
+    }),
+    [
+      hydrated,
+      state.profile,
+      state.settings,
+      state.savedRouteIds,
+      state.rsvpedRouteIds,
+      storageUsageKb,
+      updateProfile,
+      updateSettings,
+      toggleSavedRoute,
+      toggleRsvpRoute,
+      wipeAllMetadata,
+    ]
   );
+
+  return <DesiRouteContext.Provider value={value}>{children}</DesiRouteContext.Provider>;
 }
 
 export function useDesiRoute(): DesiRouteContextValue {

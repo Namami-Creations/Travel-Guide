@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Header } from "@/components/navigation/Header";
 import { Footer } from "@/components/navigation/Footer";
 import { useDesiRoute } from "@/lib/context/DesiRouteContext";
@@ -100,7 +100,7 @@ export function SettingsClient() {
             Regional & Display Preferences
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
+          <div className="max-w-md text-xs">
             <div>
               <label
                 htmlFor="currency-display-select"
@@ -118,27 +118,6 @@ export function SettingsClient() {
                 <option value="NPR">NPR (Nepali Rupee — 1 INR = 1.60 NPR)</option>
                 <option value="BTN">BTN (Bhutanese Ngultrum — 1:1 Peg)</option>
               </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="offline-cache-toggle"
-                className="font-bold text-slate-700 dark:text-slate-300 block mb-1.5"
-              >
-                Offline Printable Briefs & Local Sync
-              </label>
-              <div className="flex items-center justify-between p-2.5 rounded-xl visionos-glass border border-slate-200 dark:border-slate-700">
-                <span className="text-slate-600 dark:text-slate-300 font-medium">
-                  Retain route bookmarks in device storage
-                </span>
-                <input
-                  id="offline-cache-toggle"
-                  type="checkbox"
-                  checked={settings.offlineCache}
-                  onChange={(e) => updateSettings({ offlineCache: e.target.checked })}
-                  className="w-4 h-4 accent-cyan-500 rounded cursor-pointer"
-                />
-              </div>
             </div>
           </div>
 

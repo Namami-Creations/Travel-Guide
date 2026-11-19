@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { SubcontinentRoute } from "@/types/route";
 import { Sparkles, Heart, AlertTriangle, VolumeX, Eye } from "lucide-react";
 

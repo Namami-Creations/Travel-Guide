@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { ORIGIN_CITIES } from "@/lib/data/origin-cities";
 import { SUBCONTINENT_ROUTES } from "@/lib/data/subcontinent-routes";
 import { ORIGIN_GEO, resolveMultiModalTransit } from "@/lib/engine/transit-resolver";

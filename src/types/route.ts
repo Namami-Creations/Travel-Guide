@@ -117,12 +117,3 @@ export interface SubcontinentRoute {
     tip: string;
   };
 }
-
-export interface GroupMemberSurvey {
-  id: string;
-  name: string;
-  budgetCapInr: number;
-  preferredWakeUpHour: number; // e.g. 8 for 8 AM
-  diet: DietaryType;
-  activityPreference: "adventure" | "relaxed" | "cultural";
-}

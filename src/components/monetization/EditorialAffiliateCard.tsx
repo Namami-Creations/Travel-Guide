@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { CurrencyCode, SubcontinentRoute } from "@/types/route";
 import { CreditCard, ExternalLink, ShieldCheck, Building } from "lucide-react";
 import { formatPreferredCurrency } from "@/lib/engine/calculator";

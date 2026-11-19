@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { DetourAlternative } from "@/types/route";
 import { Compass, CheckCircle2, ArrowRight } from "lucide-react";
 
