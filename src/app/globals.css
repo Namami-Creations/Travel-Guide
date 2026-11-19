@@ -1,0 +1,242 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* VisionOS Dark Mode - Deep Alpine Slate with Spatial Depth */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #090d16;
+    --foreground: #f8fafc;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* WCAG 2.2 AA Accessible Keyboard Focus Ring */
+:focus-visible {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 2px;
+}
+
+/* Atmospheric Himalayan Ambient Glows for VisionOS Depth */
+.ambient-glow-amber {
+  position: fixed;
+  top: -80px;
+  right: -60px;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, rgba(245, 158, 11, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(60px);
+}
+
+.ambient-glow-blue {
+  position: fixed;
+  top: 25%;
+  left: -100px;
+  width: 580px;
+  height: 580px;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.18) 0%, rgba(99, 102, 241, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(70px);
+}
+
+.ambient-glow-emerald {
+  position: fixed;
+  bottom: 8%;
+  right: -80px;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(60px);
+}
+
+/* VisionOS Spatial Glassmorphic Utilities */
+.visionos-glass {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 10px 30px -10px rgba(0, 0, 0, 0.08),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+@media (prefers-color-scheme: dark) {
+  .visionos-glass {
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow:
+      0 20px 40px -15px rgba(0, 0, 0, 0.6),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+  }
+}
+
+.visionos-glass-elevated {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 20px 45px -12px rgba(14, 165, 233, 0.12),
+    0 8px 16px -6px rgba(0, 0, 0, 0.06),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .visionos-glass-elevated {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(36px) saturate(210%);
+    -webkit-backdrop-filter: blur(36px) saturate(210%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.7),
+      0 0 25px 0 rgba(56, 189, 248, 0.1),
+      inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.22);
+  }
+}
+
+/* Spatial 3D Dial Rim */
+.spatial-dial {
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.8));
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    inset 0 2px 4px rgba(255, 255, 255, 1),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .spatial-dial {
+    background: radial-gradient(circle at 30% 30%, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.85));
+    box-shadow:
+      0 6px 16px rgba(0, 0, 0, 0.5),
+      inset 0 1.5px 2px rgba(255, 255, 255, 0.2),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* Tactile 3D Button Extrusions */
+.tactile-button-3d {
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 4px 12px -2px rgba(14, 165, 233, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.45);
+}
+
+.tactile-button-3d:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 16px -2px rgba(14, 165, 233, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+.tactile-button-3d:active {
+  transform: translateY(1.5px);
+  box-shadow:
+    0 1px 4px rgba(14, 165, 233, 0.2),
+    inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* Spatial Interactive Card with Specular Top Rim */
+.spatial-card-3d {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease;
+}
+
+.spatial-card-3d:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+/* Elevation Topographic Cross-Section Glow */
+.elevation-path-glow {
+  filter: drop-shadow(0 0 6px rgba(14, 165, 233, 0.5));
+}
+
+/* Custom delicate slider thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #38bdf8, #0284c7);
+  cursor: pointer;
+  box-shadow:
+    0 3px 8px rgba(2, 132, 199, 0.5),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.8);
+  border: 2px solid #ffffff;
+  transition: transform 0.12s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #38bdf8, #0284c7);
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.5);
+  border: 2px solid #ffffff;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .spatial-card-3d:hover,
+  .tactile-button-3d:hover,
+  .tactile-button-3d:active {
+    transform: none;
+  }
+}
+
+/* Offline Zero-Network Print Mode for Mountain Passes */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .ambient-glow-amber,
+  .ambient-glow-blue,
+  .ambient-glow-emerald {
+    display: none !important;
+  }
+  .visionos-glass,
+  .visionos-glass-elevated,
+  .spatial-dial {
+    background: #ffffff !important;
+    color: #000000 !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border-color: #cbd5e1 !important;
+  }
+}
